@@ -423,6 +423,9 @@
             <button onclick="signOut()" style="background:none;border:none;font-family:'Inter',sans-serif;font-size:10px;color:#b0bbb2;cursor:pointer;padding:0;text-decoration:underline;" onmouseover="this.style.color='#6b7c72'" onmouseout="this.style.color='#b0bbb2'">Sign out</button>
         </div>
 
+        <!-- Cloud save status indicator (only visible when signed in) -->
+        <span id="saveStatus" style="display:none;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.06em;white-space:nowrap;transition:opacity 0.4s;"></span>
+
         <!-- Trial badge -->
         <span id="trialBadge" onclick="showUpgradeModal()" style="display:none;font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid #dae0db;cursor:pointer;transition:opacity 0.15s;white-space:nowrap;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'"></span>
 
@@ -7352,6 +7355,33 @@ async function sendMagicLink() {
     if (btn) { btn.textContent = '✓ Email Sent'; }
 }
 
+function showSaveStatus(state) {
+    var el = document.getElementById('saveStatus');
+    if (!el) return;
+    clearTimeout(el._hideTimer);
+    if (state === 'saving') {
+        el.textContent = '↑ Saving…';
+        el.style.color = '#8ca393';
+        el.style.opacity = '1';
+        el.style.display = 'inline';
+    } else if (state === 'saved') {
+        el.textContent = '✓ Saved';
+        el.style.color = '#16a34a';
+        el.style.opacity = '1';
+        el.style.display = 'inline';
+        el._hideTimer = setTimeout(function() {
+            el.style.opacity = '0';
+            setTimeout(function() { el.style.display = 'none'; }, 400);
+        }, 3000);
+    } else if (state === 'failed') {
+        el.textContent = '⚠ Not saved';
+        el.style.color = '#b45309';
+        el.style.opacity = '1';
+        el.style.display = 'inline';
+        // Stays visible until next successful save
+    }
+}
+
 function showSessionExpiredBanner() {
     var banner = document.getElementById('sessionBanner');
     if (banner) banner.style.display = 'block';
@@ -7441,12 +7471,14 @@ async function loadCloudData(user) {
 
 async function saveCloudData(user) {
     if (!user) return;
+    showSaveStatus('saving');
     try {
         // Check session is still valid before attempting the write
         var sessionCheck = await getSB().auth.getSession();
         if (!sessionCheck.data || !sessionCheck.data.session) {
             // Session gone — stop saving silently, show the expiry banner
             if (_sbUser) { _sbUser = null; updateAuthUI(null); showSessionExpiredBanner(); }
+            showSaveStatus('failed');
             return;
         }
         var appState    = await db.app_state.get('current') || {};
@@ -7468,8 +7500,14 @@ async function saveCloudData(user) {
             } else {
                 console.warn('saveCloudData error:', result.error);
             }
+            showSaveStatus('failed');
+        } else {
+            showSaveStatus('saved');
         }
-    } catch(e) { console.warn('saveCloudData:', e); }
+    } catch(e) {
+        console.warn('saveCloudData:', e);
+        showSaveStatus('failed');
+    }
 }
 
 function scheduledCloudSave() {
