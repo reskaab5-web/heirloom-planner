@@ -396,6 +396,13 @@
   <button onclick="document.getElementById('sessionBanner').style.display='none';" style="margin-left:6px;background:transparent;color:rgba(255,255,255,.7);border:none;cursor:pointer;font-size:16px;line-height:1;vertical-align:middle;">×</button>
 </div>
 
+<!-- Trial-expired banner — shown when trial ends at startup OR mid-session -->
+<div id="trialBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:19999;background:linear-gradient(135deg,#78350f,#92400e);color:white;padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.22);">
+  ⏰ Your 30-day trial has ended — your data is safe, but adding new items is paused.
+  <button onclick="showUpgradeModal()" style="margin-left:14px;background:white;color:#92400e;border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;font-size:12px;">Unlock — $12</button>
+  <button onclick="exportGuestCSV()" style="margin-left:6px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">Export data</button>
+</div>
+
 <!-- ══════════ PROTOCOL HEADER ══════════ -->
 <header class="luxury-card px-5 py-3 rounded-xl mb-6 flex justify-between items-center gap-4" style="flex-wrap:nowrap;min-height:48px;">
     <!-- Wordmark -->
@@ -7752,8 +7759,11 @@ function getTrialStatus() {
 function unlockApp() {
     // Called after successful payment (Stripe webhook or manual unlock)
     try { localStorage.setItem(UNLOCK_KEY, '1'); } catch(e){}
-    var modal = document.getElementById('upgradeModal');
-    if (modal) modal.style.display = 'none';
+    var modal  = document.getElementById('upgradeModal');
+    var banner = document.getElementById('trialBanner');
+    if (modal)  modal.style.display  = 'none';
+    if (banner) banner.style.display = 'none';
+    if (_trialMonitorInterval) { clearInterval(_trialMonitorInterval); _trialMonitorInterval = null; }
     showToast('Heirloom unlocked — thank you! 🎉');
     updateTrialBadge();
 }
@@ -7813,6 +7823,48 @@ function updateTrialBadge() {
     }
 }
 
+function showTrialExpiredBanner() {
+    var banner = document.getElementById('trialBanner');
+    if (banner) banner.style.display = 'block';
+}
+
+// Background monitor — runs every 60 s while the tab is open.
+// Detects mid-session expiry and keeps the trial badge accurate.
+var _trialMonitorInterval = null;
+var _trialWasExpired      = false;   // tracks previous state so we fire the modal only once
+
+function startTrialMonitor() {
+    var s = getTrialStatus();
+    if (s.unlocked) return;          // paid — nothing to watch
+
+    _trialWasExpired = s.expired;
+    if (s.expired) showTrialExpiredBanner();  // already expired on load
+
+    _trialMonitorInterval = setInterval(function() {
+        var st = getTrialStatus();
+        updateTrialBadge();          // keep the countdown fresh every minute
+
+        if (st.unlocked) {
+            // Paid mid-session (e.g. they bought in another tab)
+            clearInterval(_trialMonitorInterval);
+            var banner = document.getElementById('trialBanner');
+            if (banner) banner.style.display = 'none';
+            return;
+        }
+
+        if (st.expired && !_trialWasExpired) {
+            // Trial just crossed midnight — fire once
+            _trialWasExpired = true;
+            showTrialExpiredBanner();
+            // Show the upgrade modal with a short delay so it doesn't feel instant/jarring
+            setTimeout(showUpgradeModal, 1200);
+            showToast('Your trial has ended — your data is safe.');
+        }
+
+        _trialWasExpired = st.expired;
+    }, 60000);   // every 60 seconds
+}
+
 // Wrap any "add" action — shows upgrade modal if trial expired
 function gatedAction(callback) {
     var s = getTrialStatus();
@@ -7848,6 +7900,7 @@ async function initAppLifecycle() {
 
     initTrial();
     updateTrialBadge();
+    startTrialMonitor();   // background check: detects mid-session expiry + keeps badge fresh
     await initSupabase();   // auth state + cloud sync
     await seedDatabaseIfEmpty();
     await migrateBudgetCategories();
