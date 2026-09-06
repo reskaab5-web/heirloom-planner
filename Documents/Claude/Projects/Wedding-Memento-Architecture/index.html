@@ -494,6 +494,20 @@
         <div>
             <div style="font-family:'Inter',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#b0bbb2;margin-bottom:6px;">Backup &amp; Restore</div>
             <div style="font-family:'Inter',sans-serif;font-size:12px;color:#58695d;margin-bottom:14px;">Save your planning data to a file, or restore from a previous backup.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                <button onclick="exportGuestCSV()"
+                    style="display:inline-flex;align-items:center;gap:5px;background:none;color:#58695d;border:1.5px solid #dae0db;border-radius:8px;padding:7px 14px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;"
+                    onmouseover="this.style.borderColor='#8ca393';this.style.color='#3d4740'" onmouseout="this.style.borderColor='#dae0db';this.style.color='#58695d'">
+                    <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 10v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    Guest List CSV
+                </button>
+                <button onclick="printSeatingChart()"
+                    style="display:inline-flex;align-items:center;gap:5px;background:none;color:#58695d;border:1.5px solid #dae0db;border-radius:8px;padding:7px 14px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;"
+                    onmouseover="this.style.borderColor='#8ca393';this.style.color='#3d4740'" onmouseout="this.style.borderColor='#dae0db';this.style.color='#58695d'">
+                    <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="2" y="4" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M4 4V2.5A.5.5 0 014.5 2h5a.5.5 0 01.5.5V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 9.5h6M4 7.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    Print Seating Chart
+                </button>
+            </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <button id="exportHeirloomBtn" onclick="exportHeirloomData()"
                 style="display:inline-flex;align-items:center;gap:6px;background:#2d312e;color:white;border:none;border-radius:8px;padding:9px 18px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.15s;"
@@ -1064,6 +1078,12 @@
                             Import CSV
                         </button>
                         <input type="file" id="grCsvInput" accept=".csv,.txt" style="display:none;" onchange="GR.importFile(this)">
+                        <button onclick="exportGuestCSV()"
+                            style="background:white;border:1.5px solid #dae0db;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#6b7c72;padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s;"
+                            onmouseover="this.style.borderColor='#8ca393';this.style.color='#3d4740'" onmouseout="this.style.borderColor='#dae0db';this.style.color='#6b7c72'">
+                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 10v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                            Export CSV
+                        </button>
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;align-items:end;">
@@ -1332,6 +1352,13 @@
                         <button onclick="ST.clearCanvas()"
                             style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#dc2626;padding:8px 14px;cursor:pointer;transition:background 0.15s;"
                             onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">Clear All</button>
+                        <div style="width:1px;height:24px;background:#e8eeea;"></div>
+                        <button onclick="printSeatingChart()"
+                            style="background:#f5f8f5;border:1.5px solid #dae0db;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#3d4740;padding:8px 14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;"
+                            onmouseover="this.style.borderColor='#8ca393';this.style.background='#ebf0ec'" onmouseout="this.style.borderColor='#dae0db';this.style.background='#f5f8f5'">
+                            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="2" y="4" width="10" height="7" rx="1.5" stroke="#6b7c72" stroke-width="1.6"/><path d="M4 4V2.5A.5.5 0 014.5 2h5a.5.5 0 01.5.5V4" stroke="#6b7c72" stroke-width="1.6" stroke-linecap="round"/><path d="M4 9.5h6M4 7.5h4" stroke="#6b7c72" stroke-width="1.4" stroke-linecap="round"/></svg>
+                            Print Chart
+                        </button>
                     </div>
                 </div>
             </div>
@@ -7354,6 +7381,124 @@ async function sendMagicLink() {
     }
     if (btn) { btn.textContent = '✓ Email Sent'; }
 }
+
+// ── DATA EXPORT ─────────────────────────────────────────────────────────────
+
+function exportGuestCSV() {
+    var guests = (typeof GR !== 'undefined') ? GR.getAll() : [];
+    if (!guests.length) { showToast('No guests to export yet.'); return; }
+
+    var obData = {};
+    try { obData = JSON.parse(localStorage.getItem('ob_data_v1') || '{}'); } catch(e){}
+
+    var rows = [['Name','RSVP','Meal Choice','Plus One','Plus One Name','Dietary Notes','Mailing Address','Table Assignment']];
+    guests.forEach(function(g) {
+        rows.push([
+            g.name            || '',
+            g.rsvp            || 'pending',
+            g.meal            || '',
+            g.plus_one        ? 'Yes' : 'No',
+            g.plus_one_name   || '',
+            g.dietary         || '',
+            g.mailing_address || '',
+            g.table           || ''
+        ]);
+    });
+
+    var csv = rows.map(function(row) {
+        return row.map(function(cell) {
+            var s = String(cell).replace(/"/g, '""');
+            return (/[",\n\r]/.test(s)) ? '"' + s + '"' : s;
+        }).join(',');
+    }).join('\r\n');
+
+    var slug = ((obData.bride || '') + (obData.bride && obData.groom ? '-' : '') + (obData.groom || '') || 'wedding')
+               .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    _downloadText('﻿' + csv, 'text/csv;charset=utf-8;', 'guest-list-' + slug + '.csv');
+    showToast('Guest list exported — ' + guests.length + ' guest' + (guests.length === 1 ? '' : 's') + '.');
+}
+
+function printSeatingChart() {
+    var raw = localStorage.getItem('st_tables');
+    var data = raw ? JSON.parse(raw) : null;
+    var tables = (data && data.tables && data.tables.length) ? data.tables : [];
+    if (!tables.length) { showToast('No seating chart to print yet. Add tables and assign guests first.'); return; }
+
+    var obData = {};
+    try { obData = JSON.parse(localStorage.getItem('ob_data_v1') || '{}'); } catch(e){}
+    var bride = obData.bride || 'Bride';
+    var groom = obData.groom || 'Groom';
+    var date  = obData.date  || '';
+    var venue = obData.venue || '';
+
+    function _h(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    var tableHtml = '';
+    var totalSeated = 0, totalSeats = 0;
+    tables.forEach(function(t) {
+        var guests = [];
+        if (Array.isArray(t.guests)) {
+            t.guests.forEach(function(g) { if (g) guests.push(g); });
+        }
+        totalSeated += guests.length;
+        totalSeats  += t.seats || 0;
+        tableHtml += '<div class="tb">';
+        tableHtml += '<div class="tn">' + (t.type === 'rect' ? '▭' : '◯') + ' ' + _h(t.name) + ' <span class="sc">(' + guests.length + '/' + (t.seats||0) + ' seated)</span></div>';
+        if (guests.length) {
+            tableHtml += '<ol>';
+            guests.forEach(function(g) { tableHtml += '<li>' + _h(g) + '</li>'; });
+            tableHtml += '</ol>';
+        } else {
+            tableHtml += '<p class="empty">— No guests assigned —</p>';
+        }
+        tableHtml += '</div>';
+    });
+
+    var subtitle = [date ? _h(date) : '', venue ? _h(venue) : ''].filter(Boolean).join(' · ');
+
+    var html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+        '<title>Seating Chart — ' + _h(bride) + ' &amp; ' + _h(groom) + '</title>' +
+        '<style>' +
+        '*{box-sizing:border-box;margin:0;padding:0}' +
+        'body{font-family:Georgia,serif;color:#2d312e;padding:28px 32px}' +
+        'h1{font-size:26px;font-weight:normal;text-align:center;letter-spacing:.04em;color:#3d4740;margin-bottom:4px}' +
+        '.sub{text-align:center;font-size:12px;color:#6b7c72;margin-bottom:6px;font-family:Arial,sans-serif}' +
+        '.meta{text-align:center;font-size:11px;color:#8ca393;margin-bottom:24px;font-family:Arial,sans-serif}' +
+        '.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}' +
+        '.tb{border:1px solid #dae0db;border-radius:6px;padding:12px 14px;break-inside:avoid}' +
+        '.tn{font-size:12px;font-weight:700;color:#3d4740;margin-bottom:8px;font-family:Arial,sans-serif}' +
+        '.sc{font-weight:400;color:#8ca393;font-size:10px}' +
+        'ol{padding-left:16px}' +
+        'li{font-size:11.5px;margin-bottom:3px;line-height:1.4}' +
+        '.empty{font-size:11px;color:#b0bbb2;font-style:italic}' +
+        '.foot{margin-top:24px;text-align:center;font-size:10px;color:#b0bbb2;font-family:Arial,sans-serif}' +
+        '@media print{body{padding:12px 16px}.grid{gap:12px}}' +
+        '</style></head><body>' +
+        '<h1>' + _h(bride) + ' &amp; ' + _h(groom) + '</h1>' +
+        (subtitle ? '<div class="sub">' + subtitle + '</div>' : '') +
+        '<div class="meta">' + tables.length + ' tables · ' + totalSeated + ' of ' + totalSeats + ' seats filled</div>' +
+        '<div class="grid">' + tableHtml + '</div>' +
+        '<div class="foot">Heirloom Planner · Printed ' + new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + '</div>' +
+        '<script>window.onload=function(){window.print();};<\/script>' +
+        '</body></html>';
+
+    var win = window.open('', '_blank');
+    if (!win) { showToast('Pop-up blocked — allow pop-ups for this page, then try again.'); return; }
+    win.document.write(html);
+    win.document.close();
+}
+
+function _downloadText(content, mimeType, filename) {
+    var blob = new Blob([content], { type: mimeType });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 function showSaveStatus(state) {
     var el = document.getElementById('saveStatus');
