@@ -374,6 +374,45 @@
                 height: 1px !important;
             }
 
+            /* ── Seating Studio — mobile layout ── */
+
+            /* Stack 3 columns into a single column */
+            #stLayout {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Left sidebar (directory + unassigned): side-by-side on mobile to save space */
+            #stLayout > div:first-child {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 10px !important;
+            }
+
+            /* Canvas: shorter on small screens */
+            #stCanvas {
+                height: 380px !important;
+            }
+
+            /* Show mobile hint above canvas */
+            #stCanvasMobileHint {
+                display: block !important;
+            }
+
+            /* Properties panel: full width below canvas */
+            #stPropsPanel {
+                width: 100% !important;
+            }
+
+            /* Toolbar buttons: horizontal scroll strip, no wrap */
+            #stToolbarBtns {
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding-bottom: 4px !important;
+                scrollbar-width: none !important;
+            }
+            #stToolbarBtns::-webkit-scrollbar { display: none; }
+
             /* Right-edge fade hint — stays fixed, shows more content exists */
             #tabNavWrap::after {
                 content: '';
@@ -1330,7 +1369,7 @@
             <div class="luxury-card px-5 py-4 rounded-xl bg-white">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div id="stStats" style="display:flex;align-items:center;gap:12px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:#3d4740;flex-wrap:wrap;"></div>
-                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+                    <div id="stToolbarBtns" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
                         <button onclick="ST.addTable('round')"
                             style="background:#f5f8f5;border:1.5px solid #dae0db;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#3d4740;padding:8px 14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;"
                             onmouseover="this.style.borderColor='#8ca393';this.style.background='#ebf0ec'" onmouseout="this.style.borderColor='#dae0db';this.style.background='#f5f8f5'">
@@ -1371,7 +1410,7 @@
             </div>
 
             <!-- Three-column layout -->
-            <div style="display:grid;grid-template-columns:210px 1fr 232px;gap:14px;align-items:start;">
+            <div id="stLayout" style="display:grid;grid-template-columns:210px 1fr 232px;gap:14px;align-items:start;">
 
                 <!-- Left: Directory + Unassigned -->
                 <div style="display:flex;flex-direction:column;gap:12px;">
@@ -1395,6 +1434,9 @@
 
                 <!-- Canvas -->
                 <div class="luxury-card rounded-xl overflow-hidden">
+                    <div id="stCanvasMobileHint" style="display:none;background:#f0f4f1;border-bottom:1px solid #dae0db;padding:7px 12px;font-family:'Inter',sans-serif;font-size:11px;color:#58695d;text-align:center;">
+                        👆 Tap a table to select · Drag to rearrange · Tap a guest below to seat them
+                    </div>
                     <div id="stCanvas"
                         style="position:relative;height:560px;background-color:#f5f8f5;background-image:radial-gradient(circle,#c2cfca 1px,transparent 1px);background-size:22px 22px;cursor:default;user-select:none;overflow:hidden;touch-action:none;">
                     </div>
@@ -7525,52 +7567,189 @@ function printSeatingChart() {
 
     function _h(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    var tableHtml = '';
+    // Build a name → guest-object lookup from the Guest Registry for meal + dietary
+    var guestLookup = {};
+    try {
+        var allGuests = (typeof GR !== 'undefined') ? GR.getAll() : [];
+        allGuests.forEach(function(g) {
+            if (g.name) guestLookup[g.name.toLowerCase()] = g;
+        });
+    } catch(e) {}
+
+    // Meal abbreviations for tight table cards
+    function _mealCode(meal) {
+        if (!meal) return '';
+        var m = meal.toLowerCase();
+        if (m.indexOf('chicken') !== -1) return 'C';
+        if (m.indexOf('beef')    !== -1) return 'B';
+        if (m.indexOf('salmon')  !== -1) return 'S';
+        if (m.indexOf('fish')    !== -1) return 'F';
+        if (m.indexOf('vegan')   !== -1) return 'Vgn';
+        if (m.indexOf('vegetar') !== -1) return 'V';
+        if (m.indexOf('kids')    !== -1) return 'K';
+        // Anything else — show first 4 chars
+        return meal.substring(0, 4);
+    }
+
+    // Tally meal counts and track dietary flags
+    var mealCounts = {};
+    var dietaryGuests = [];  // [{name, note}]
+
+    // Build Page 1: table cards
     var totalSeated = 0, totalSeats = 0;
+    var tableHtml = '';
     tables.forEach(function(t) {
-        var guests = [];
+        var names = [];
         if (Array.isArray(t.guests)) {
-            t.guests.forEach(function(g) { if (g) guests.push(g); });
+            t.guests.forEach(function(g) { if (g) names.push(g); });
         }
-        totalSeated += guests.length;
+        totalSeated += names.length;
         totalSeats  += t.seats || 0;
+
+        var shape = t.type === 'rect' ? '▭' : '◯';
+        var empty = t.seats - names.length;
+
         tableHtml += '<div class="tb">';
-        tableHtml += '<div class="tn">' + (t.type === 'rect' ? '▭' : '◯') + ' ' + _h(t.name) + ' <span class="sc">(' + guests.length + '/' + (t.seats||0) + ' seated)</span></div>';
-        if (guests.length) {
-            tableHtml += '<ol>';
-            guests.forEach(function(g) { tableHtml += '<li>' + _h(g) + '</li>'; });
-            tableHtml += '</ol>';
+        tableHtml += '<div class="th">' + shape + ' ' + _h(t.name) + '</div>';
+        tableHtml += '<div class="tc">' + names.length + ' seated';
+        if (empty > 0) tableHtml += ' · ' + empty + ' open';
+        tableHtml += '</div>';
+
+        if (names.length) {
+            tableHtml += '<table class="gt"><tbody>';
+            names.forEach(function(name, idx) {
+                var g   = guestLookup[name.toLowerCase()] || {};
+                var mc  = _mealCode(g.meal || '');
+                var diet = (g.dietary || '').trim();
+                // Tally meal
+                var mealLabel = g.meal || 'Not specified';
+                mealCounts[mealLabel] = (mealCounts[mealLabel] || 0) + 1;
+                // Flag dietary
+                if (diet) dietaryGuests.push({ name: name, table: t.name, note: diet });
+                tableHtml += '<tr>';
+                tableHtml += '<td class="gn">' + (idx+1) + '. ' + _h(name) + '</td>';
+                tableHtml += '<td class="gm">' + (mc ? _h(mc) : '') + '</td>';
+                if (diet) tableHtml += '<td class="gd" title="' + _h(diet) + '">⚑</td>';
+                else      tableHtml += '<td class="gd"></td>';
+                tableHtml += '</tr>';
+            });
+            tableHtml += '</tbody></table>';
         } else {
             tableHtml += '<p class="empty">— No guests assigned —</p>';
         }
         tableHtml += '</div>';
     });
 
+    // Meal legend
+    var mealLegendHtml = '';
+    var mealKeys = Object.keys(mealCounts).sort();
+    if (mealKeys.length) {
+        mealLegendHtml += '<div class="legend">';
+        mealLegendHtml += '<span class="leg-title">Meal counts: </span>';
+        mealLegendHtml += mealKeys.map(function(k) {
+            return '<span class="leg-item"><strong>' + _h(_mealCode(k) || k.substring(0,4)) + '</strong> ' + _h(k) + ' (' + mealCounts[k] + ')</span>';
+        }).join(' &nbsp;·&nbsp; ');
+        mealLegendHtml += '</div>';
+    }
+
+    // Dietary flag list
+    var dietaryHtml = '';
+    if (dietaryGuests.length) {
+        dietaryHtml += '<div class="diet-box"><div class="diet-title">⚑ Dietary Notes</div><table class="diet-tbl"><tbody>';
+        dietaryGuests.forEach(function(d) {
+            dietaryHtml += '<tr><td class="dn">' + _h(d.name) + '</td><td class="dt">' + _h(d.table) + '</td><td class="dd">' + _h(d.note) + '</td></tr>';
+        });
+        dietaryHtml += '</tbody></table></div>';
+    }
+
+    // Build Page 2: alphabetical guest index
+    var allSeated = [];
+    tables.forEach(function(t) {
+        if (Array.isArray(t.guests)) {
+            t.guests.forEach(function(name) {
+                if (name) allSeated.push({ name: name, table: t.name });
+            });
+        }
+    });
+    allSeated.sort(function(a, b) {
+        // Sort by last word (surname) then full name
+        var aLast = a.name.trim().split(' ').pop().toLowerCase();
+        var bLast = b.name.trim().split(' ').pop().toLowerCase();
+        return aLast < bLast ? -1 : aLast > bLast ? 1 : 0;
+    });
+
+    var indexHtml = '<div class="page-break"></div>';
+    indexHtml += '<h2>Guest Index — Alphabetical</h2>';
+    indexHtml += '<table class="idx"><thead><tr><th>Guest Name</th><th>Table</th><th>Meal</th><th>Dietary</th></tr></thead><tbody>';
+    allSeated.forEach(function(row) {
+        var g   = guestLookup[row.name.toLowerCase()] || {};
+        var mc  = g.meal || '—';
+        var diet = (g.dietary || '').trim() || '—';
+        indexHtml += '<tr>';
+        indexHtml += '<td>' + _h(row.name) + '</td>';
+        indexHtml += '<td class="idx-tbl">' + _h(row.table) + '</td>';
+        indexHtml += '<td class="idx-m">' + _h(mc) + '</td>';
+        indexHtml += '<td class="idx-d">' + _h(diet) + '</td>';
+        indexHtml += '</tr>';
+    });
+    indexHtml += '</tbody></table>';
+
     var subtitle = [date ? _h(date) : '', venue ? _h(venue) : ''].filter(Boolean).join(' · ');
+    var printedOn = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+    var css = [
+        '*{box-sizing:border-box;margin:0;padding:0}',
+        'body{font-family:Arial,sans-serif;color:#1a1f1c;padding:22px 28px;font-size:12px}',
+        'h1{font-family:Georgia,serif;font-size:22px;font-weight:normal;text-align:center;letter-spacing:.04em;color:#2d312e;margin-bottom:3px}',
+        'h2{font-family:Georgia,serif;font-size:16px;font-weight:normal;color:#2d312e;margin-bottom:12px;border-bottom:1.5px solid #dae0db;padding-bottom:6px}',
+        '.sub{text-align:center;font-size:11px;color:#58695d;margin-bottom:4px}',
+        '.meta{text-align:center;font-size:10px;color:#8ca393;margin-bottom:18px}',
+        '.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}',
+        '.tb{border:1px solid #c2cbc4;border-radius:5px;padding:10px 12px;break-inside:avoid}',
+        '.th{font-size:11.5px;font-weight:700;color:#2d312e;margin-bottom:2px}',
+        '.tc{font-size:10px;color:#6b7c72;margin-bottom:7px}',
+        '.gt{width:100%;border-collapse:collapse}',
+        '.gn{font-size:11px;color:#1a1f1c;padding:1.5px 0;line-height:1.35;width:auto}',
+        '.gm{font-size:10px;color:#58695d;font-weight:700;padding-left:6px;white-space:nowrap}',
+        '.gd{font-size:10px;color:#b45309;padding-left:4px;white-space:nowrap}',
+        '.empty{font-size:10px;color:#b0bbb2;font-style:italic}',
+        '.legend{font-size:10px;color:#3d4740;background:#f5f8f5;border:1px solid #dae0db;border-radius:4px;padding:6px 10px;margin-bottom:10px;line-height:1.8}',
+        '.leg-title{font-weight:700;color:#58695d}',
+        '.leg-item{margin:0 2px}',
+        '.diet-box{border:1px solid #fde68a;background:#fffbeb;border-radius:5px;padding:10px 12px;margin-bottom:16px}',
+        '.diet-title{font-weight:700;color:#92400e;font-size:11px;margin-bottom:7px}',
+        '.diet-tbl{width:100%;border-collapse:collapse}',
+        '.dn{font-size:11px;width:35%;padding:1.5px 0}',
+        '.dt{font-size:11px;width:25%;color:#6b7c72}',
+        '.dd{font-size:11px;color:#92400e}',
+        '.foot{text-align:center;font-size:9.5px;color:#b0bbb2;margin-top:10px;padding-top:8px;border-top:1px solid #f0f4f1}',
+        '.page-break{page-break-before:always;margin-top:32px}',
+        '.idx{width:100%;border-collapse:collapse}',
+        '.idx thead th{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#58695d;border-bottom:1.5px solid #c2cbc4;padding:4px 8px 6px;text-align:left}',
+        '.idx tbody tr:nth-child(even){background:#f5f8f5}',
+        '.idx tbody td{font-size:11px;padding:3.5px 8px;border-bottom:1px solid #edf1ee;line-height:1.35}',
+        '.idx-tbl{color:#58695d;white-space:nowrap}',
+        '.idx-m{color:#3d4740;white-space:nowrap}',
+        '.idx-d{color:#92400e}',
+        '@media print{',
+        '  body{padding:10px 14px}',
+        '  .grid{gap:10px}',
+        '  .page-break{page-break-before:always;margin-top:0}',
+        '}'
+    ].join('');
 
     var html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
         '<title>Seating Chart — ' + _h(bride) + ' &amp; ' + _h(groom) + '</title>' +
-        '<style>' +
-        '*{box-sizing:border-box;margin:0;padding:0}' +
-        'body{font-family:Georgia,serif;color:#2d312e;padding:28px 32px}' +
-        'h1{font-size:26px;font-weight:normal;text-align:center;letter-spacing:.04em;color:#3d4740;margin-bottom:4px}' +
-        '.sub{text-align:center;font-size:12px;color:#6b7c72;margin-bottom:6px;font-family:Arial,sans-serif}' +
-        '.meta{text-align:center;font-size:11px;color:#8ca393;margin-bottom:24px;font-family:Arial,sans-serif}' +
-        '.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}' +
-        '.tb{border:1px solid #dae0db;border-radius:6px;padding:12px 14px;break-inside:avoid}' +
-        '.tn{font-size:12px;font-weight:700;color:#3d4740;margin-bottom:8px;font-family:Arial,sans-serif}' +
-        '.sc{font-weight:400;color:#8ca393;font-size:10px}' +
-        'ol{padding-left:16px}' +
-        'li{font-size:11.5px;margin-bottom:3px;line-height:1.4}' +
-        '.empty{font-size:11px;color:#b0bbb2;font-style:italic}' +
-        '.foot{margin-top:24px;text-align:center;font-size:10px;color:#b0bbb2;font-family:Arial,sans-serif}' +
-        '@media print{body{padding:12px 16px}.grid{gap:12px}}' +
-        '</style></head><body>' +
+        '<style>' + css + '</style></head><body>' +
         '<h1>' + _h(bride) + ' &amp; ' + _h(groom) + '</h1>' +
         (subtitle ? '<div class="sub">' + subtitle + '</div>' : '') +
-        '<div class="meta">' + tables.length + ' tables · ' + totalSeated + ' of ' + totalSeats + ' seats filled</div>' +
+        '<div class="meta">' + tables.length + ' tables · ' + totalSeated + ' guests seated · Printed ' + printedOn + '</div>' +
         '<div class="grid">' + tableHtml + '</div>' +
-        '<div class="foot">Heirloom Planner · Printed ' + new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + '</div>' +
+        mealLegendHtml +
+        dietaryHtml +
+        '<div class="foot">Heirloom Planner — Seating Chart (Page 1 of 2)</div>' +
+        indexHtml +
+        '<div class="foot" style="margin-top:16px;">Heirloom Planner — Guest Index (Page 2 of 2)</div>' +
         '<script>window.onload=function(){window.print();};<\/script>' +
         '</body></html>';
 
