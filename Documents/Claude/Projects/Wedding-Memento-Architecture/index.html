@@ -282,6 +282,8 @@
             position: relative;
         }
         @keyframes riseIn { from { transform:translateY(28px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+        @keyframes fadeSlideIn { from { opacity:0;transform:translateY(12px); } to { opacity:1;transform:translateY(0); } }
+        @keyframes wwPulse { 0%,100% { opacity:0.55;transform:scale(1); } 50% { opacity:1;transform:scale(1.1); } }
         .modal-panel-reg {
             max-width: 480px;
         }
@@ -764,6 +766,36 @@
     </h1>
     <p style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.15rem;font-style:italic;color:var(--th-accent-dark);letter-spacing:0.08em;margin-bottom:28px;position:relative;z-index:1;">Your complete private guide to the perfect day</p>
 
+    <!-- ══════════ FIRST-VISIT WELCOME BANNER ══════════ -->
+    <div id="heroWelcome" style="max-width:660px;margin:0 auto 30px;padding:24px 28px 22px;background:linear-gradient(135deg,rgba(140,163,147,0.13) 0%,rgba(255,255,255,0.92) 100%);border:1.5px solid rgba(140,163,147,0.38);border-radius:22px;position:relative;z-index:1;text-align:left;animation:fadeSlideIn 0.5s ease;box-shadow:0 4px 28px -8px rgba(140,163,147,0.3);">
+        <button onclick="dismissHeroWelcome()" title="Dismiss" style="position:absolute;top:12px;right:14px;background:none;border:none;font-family:'Inter',sans-serif;font-size:11px;color:#b0bbb2;cursor:pointer;letter-spacing:0.05em;padding:4px 8px;border-radius:6px;transition:color 0.15s;" onmouseover="this.style.color='#6b7c72'" onmouseout="this.style.color='#b0bbb2'">I've got it ✓</button>
+        <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="flex:1;min-width:220px;">
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.45rem;font-weight:600;color:#2d312e;margin-bottom:8px;line-height:1.3;">You're engaged. ✨ Let's make this feel like <em>yours</em>.</div>
+                <div style="font-family:'Inter',sans-serif;font-size:12px;color:#6b7c72;line-height:1.75;margin-bottom:16px;">Everything lives here privately on your device — no logins, no overwhelm. We'll keep you ahead of every deadline, walk you through every decision, and make sure nothing falls through the cracks.</div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:26px;height:26px;border-radius:50%;background:var(--th-accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><span style="font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:white;">1</span></div>
+                        <span style="font-family:'Inter',sans-serif;font-size:12.5px;color:#3d4740;line-height:1.4;"><strong>Tap a photo circle</strong> — add your photo and your husband's</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:26px;height:26px;border-radius:50%;background:var(--th-accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><span style="font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:white;">2</span></div>
+                        <span style="font-family:'Inter',sans-serif;font-size:12.5px;color:#3d4740;line-height:1.4;"><strong>Click "Bride" or "Groom"</strong> — type your actual names</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:26px;height:26px;border-radius:50%;background:var(--th-accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><span style="font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:white;">3</span></div>
+                        <span style="font-family:'Inter',sans-serif;font-size:12.5px;color:#3d4740;line-height:1.4;"><strong>Set your wedding date</strong> below — starts your live countdown and unlocks everything else</span>
+                    </div>
+                </div>
+            </div>
+            <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 20px;background:rgba(255,255,255,0.78);border-radius:16px;border:1px solid rgba(140,163,147,0.22);text-align:center;min-width:144px;">
+                <span style="font-size:28px;line-height:1;">🌿</span>
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-style:italic;color:var(--th-accent-dark);line-height:1.55;">We'll remind you of every deadline and walk you through every step.</div>
+                <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#8ca393;margin-top:4px;">You've got this. 🤍</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Theme swatches -->
     <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:36px;position:relative;z-index:1;">
         <span style="font-size:11px;font-family:'Inter',sans-serif;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--th-accent-dark);margin-right:6px;">Theme</span>
@@ -788,6 +820,7 @@
                 <div id="bridePhotoPlaceholder" style="text-align:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--th-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 6px;display:block;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                     <div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--th-accent);letter-spacing:0.08em;text-transform:uppercase;line-height:1.4;">Add<br>Photo</div>
+                    <div class="ww-tap-hint" style="margin-top:7px;font-family:'Cormorant Garamond',Georgia,serif;font-size:12px;font-style:italic;color:var(--th-accent);animation:wwPulse 2.2s ease-in-out infinite;">tap here</div>
                 </div>
             </div>
             <input type="text" id="brideName" value="Bride" oninput="syncCoupleNames()"
@@ -820,6 +853,7 @@
                 <div id="groomPhotoPlaceholder" style="text-align:center;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--th-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 6px;display:block;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                     <div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--th-accent);letter-spacing:0.08em;text-transform:uppercase;line-height:1.4;">Add<br>Photo</div>
+                    <div class="ww-tap-hint" style="margin-top:7px;font-family:'Cormorant Garamond',Georgia,serif;font-size:12px;font-style:italic;color:var(--th-accent);animation:wwPulse 2.2s ease-in-out infinite 0.4s;">tap here</div>
                 </div>
             </div>
             <input type="text" id="groomName" value="Groom" oninput="syncCoupleNames()"
@@ -3204,6 +3238,7 @@ function runCountdownEngine() {
         if (_drs) _drs.innerHTML = '<span style="font-size:1.35rem;font-style:italic;color:var(--th-accent);opacity:0.55;font-weight:400;letter-spacing:0.01em;">choose your date above</span>';
         return;
     }
+    if (typeof checkHeroWelcome === 'function') checkHeroWelcome();
 
     function tick() { try {
         var target    = new Date(val + "T12:00:00");
@@ -3315,6 +3350,16 @@ window.addEventListener('load', function() {
     var wd = document.getElementById('weddingDate');
     setTimeout(runCountdownEngine, 100);
 
+    // ── Hide welcome banner if user has already been welcomed or has data ──
+    try {
+        if (localStorage.getItem('heirloom_welcomed')) {
+            var _hw = document.getElementById('heroWelcome');
+            if (_hw) { _hw.style.display = 'none'; }
+            document.querySelectorAll('.ww-tap-hint').forEach(function(el) { el.style.display = 'none'; });
+        }
+    } catch(e) {}
+    setTimeout(checkHeroWelcome, 200);
+
     // ── Open "A Word for Today" by default — it's the warmest feature, shouldn't be hidden ──
     if (typeof toggleAccordionItem === 'function') {
         toggleAccordionItem('theoStripPanel', 'theoStripChevron', 'theoStripBtn');
@@ -3408,6 +3453,43 @@ function syncCoupleNames() {
     }
 
     persistStateFieldsToDisk();
+    checkHeroWelcome();
+}
+
+// ─────────────────────────────────────────
+// HERO WELCOME BANNER
+// ─────────────────────────────────────────
+function dismissHeroWelcome() {
+    var w = document.getElementById('heroWelcome');
+    if (!w || w.style.display === 'none') return;
+    w.style.transition = 'opacity 0.4s ease, transform 0.4s ease, max-height 0.5s ease, padding 0.4s ease, margin 0.4s ease, border 0.3s ease';
+    w.style.overflow = 'hidden';
+    w.style.maxHeight = w.offsetHeight + 'px';
+    requestAnimationFrame(function() {
+        w.style.opacity = '0';
+        w.style.transform = 'translateY(-8px)';
+        setTimeout(function() {
+            w.style.maxHeight = '0';
+            w.style.paddingTop = '0';
+            w.style.paddingBottom = '0';
+            w.style.marginBottom = '0';
+            w.style.borderWidth = '0';
+            setTimeout(function() { w.style.display = 'none'; }, 400);
+        }, 280);
+    });
+    try { localStorage.setItem('heirloom_welcomed', '1'); } catch(e) {}
+    // Also hide the pulsing "tap here" hints
+    document.querySelectorAll('.ww-tap-hint').forEach(function(el) { el.style.display = 'none'; });
+}
+function checkHeroWelcome() {
+    var w = document.getElementById('heroWelcome');
+    if (!w || w.style.display === 'none') return;
+    var b = (document.getElementById('brideName') ? document.getElementById('brideName').value : '').trim();
+    var g = (document.getElementById('groomName') ? document.getElementById('groomName').value : '').trim();
+    var d = document.getElementById('weddingDate') ? document.getElementById('weddingDate').value : '';
+    if ((b && b !== 'Bride') || (g && g !== 'Groom') || d) {
+        dismissHeroWelcome();
+    }
 }
 
 // ─────────────────────────────────────────
