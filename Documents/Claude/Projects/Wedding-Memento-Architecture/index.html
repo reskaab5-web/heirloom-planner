@@ -442,6 +442,14 @@
   <button onclick="exportGuestCSV()" style="margin-left:6px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">Export data</button>
 </div>
 
+<!-- Conflict detection banner (blue, z-index below trial + session) -->
+<div id="conflictBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:19998;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);color:white;padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.22);">
+  🔀 Changes detected from another device — someone may have updated the planner.
+  <button onclick="reloadLatestFromCloud()" style="margin-left:14px;background:white;color:#1d4ed8;border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;font-size:12px;">Load Latest</button>
+  <button onclick="overwriteCloudWithLocal()" style="margin-left:6px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">Keep My Version</button>
+  <button onclick="dismissConflictBanner()" style="margin-left:6px;background:none;color:rgba(255,255,255,0.7);border:none;font-size:18px;line-height:1;cursor:pointer;padding:0 4px;" title="Dismiss">×</button>
+</div>
+
 <!-- ══════════ PROTOCOL HEADER ══════════ -->
 <header class="luxury-card px-5 py-3 rounded-xl mb-6 flex justify-between items-center gap-4" style="flex-wrap:nowrap;min-height:48px;">
     <!-- Wordmark -->
@@ -7379,6 +7387,9 @@ async function initSupabase() {
             var wasActive = !!_sbUser;
             _sbUser = null;
             updateAuthUI(null);
+            stopConflictMonitor();
+            dismissConflictBanner();
+            _serverLastModified = 0;
             // Only show the expiry banner for unexpected sign-outs (not manual ones)
             if (wasActive && !_manualSignOut) {
                 showSessionExpiredBanner();
@@ -7423,6 +7434,7 @@ async function onSignIn(user) {
     updateAuthUI(user);
     await loadCloudData(user);
     updateTrialBadge();
+    startConflictMonitor(); // begin watching for concurrent edits from another device
     showToast(wasPending ? 'Your purchase is confirmed — welcome to Heirloom! 💍' : 'Welcome back 💍');
 }
 
@@ -7875,6 +7887,8 @@ async function loadCloudData(user) {
         if (error) { console.warn('loadCloudData error:', error); return; }
         if (data && data.data && Object.keys(data.data).length > 0) {
             await _applyCloudData(data.data);
+            // Record the server's timestamp so conflict monitor knows what "current" looks like
+            _serverLastModified = (data.data.last_modified) ? data.data.last_modified : Date.now();
             if (data.is_paid) {
                 try { localStorage.setItem(UNLOCK_KEY, '1'); } catch(e){}
             }
@@ -7884,6 +7898,62 @@ async function loadCloudData(user) {
         }
     } catch(e) { console.warn('loadCloudData:', e); }
 }
+
+// ── Conflict detection ────────────────────────────────────────────────────
+// Tracks the last_modified timestamp we wrote/read from the server so we can
+// detect when another device has saved more recently.
+var _serverLastModified  = 0;
+var _conflictCheckTimer  = null;
+
+function showConflictBanner() {
+    var b = document.getElementById('conflictBanner');
+    if (b) b.style.display = 'block';
+}
+
+function dismissConflictBanner() {
+    var b = document.getElementById('conflictBanner');
+    if (b) b.style.display = 'none';
+}
+
+async function reloadLatestFromCloud() {
+    dismissConflictBanner();
+    stopConflictMonitor();
+    if (!_sbUser) return;
+    showToast('Loading latest version…');
+    await loadCloudData(_sbUser);
+    showToast('Reloaded — you\'re now viewing the latest changes.');
+    startConflictMonitor();
+}
+
+async function overwriteCloudWithLocal() {
+    dismissConflictBanner();
+    // Bump our reference timestamp so the next poll won't immediately re-fire.
+    _serverLastModified = Date.now();
+    if (_sbUser) await saveCloudData(_sbUser);
+    startConflictMonitor();
+}
+
+function stopConflictMonitor() {
+    if (_conflictCheckTimer) { clearInterval(_conflictCheckTimer); _conflictCheckTimer = null; }
+}
+
+function startConflictMonitor() {
+    stopConflictMonitor();
+    if (!_sbUser) return;
+    _conflictCheckTimer = setInterval(async function() {
+        if (!_sbUser || _serverLastModified === 0) return;
+        try {
+            var { data } = await getSB().from('weddings').select('data').eq('user_id', _sbUser.id).maybeSingle();
+            var serverTs = (data && data.data && data.data.last_modified) ? data.data.last_modified : 0;
+            if (serverTs > _serverLastModified) {
+                // Server has a newer version than what we loaded/last saved
+                showConflictBanner();
+                stopConflictMonitor(); // fire once; restarts after user acts
+            }
+        } catch(e) { /* network issue — try again next interval */ }
+    }, 60000); // check every 60 seconds
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function saveCloudData(user) {
     if (!user) return;
@@ -7903,7 +7973,7 @@ async function saveCloudData(user) {
         ['ob_complete','ob_data_v1','th_theme','hl_trial_start','gr_guests','st_tables'].forEach(function(k){
             try { lsSnap[k] = localStorage.getItem(k); } catch(e){}
         });
-        var payload = { app_state: appState, budget_ledger: budgetItems, local: lsSnap };
+        var payload = { app_state: appState, budget_ledger: budgetItems, local: lsSnap, last_modified: Date.now() };
         var result = await getSB().from('weddings').upsert(
             { user_id: user.id, data: payload },
             { onConflict: 'user_id' }
@@ -7918,6 +7988,7 @@ async function saveCloudData(user) {
             }
             showSaveStatus('failed');
         } else {
+            _serverLastModified = payload.last_modified; // our save is now the latest
             showSaveStatus('saved');
         }
     } catch(e) {
