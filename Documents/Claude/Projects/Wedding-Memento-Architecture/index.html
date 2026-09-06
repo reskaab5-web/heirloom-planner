@@ -1152,6 +1152,20 @@
 
             <!-- ── Dashboard focus panel (always visible) ── -->
             <div id="dashFocusPanel">
+
+                <!-- Greeting -->
+                <div id="dashGreetingLine" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.55rem;font-style:italic;color:var(--th-accent-dark);margin-bottom:14px;min-height:1.9rem;letter-spacing:0.01em;"></div>
+
+                <!-- Next Step — one clear, human, contextual action -->
+                <div id="dashNextStepCard" style="background:linear-gradient(135deg,var(--th-accent-tint) 0%,white 100%);border:1.5px solid var(--th-accent-border);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 14px -4px rgba(140,150,142,0.10);">
+                    <span id="dashNextStepIcon" style="font-size:1.55rem;flex-shrink:0;line-height:1;">🌿</span>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-family:'Inter',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--th-accent);margin-bottom:5px;">Your next step</div>
+                        <div id="dashNextStepText" style="font-family:'Inter',sans-serif;font-size:13px;color:#3d4740;line-height:1.6;">Start by setting your wedding date to begin your countdown.</div>
+                    </div>
+                    <button id="dashNextStepBtn" onclick="dashNextStepGo()" style="display:none;flex-shrink:0;background:var(--th-accent);color:white;border:none;border-radius:9px;padding:9px 18px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:opacity 0.15s,transform 0.15s;" onmouseover="this.style.opacity='0.82';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">Go →</button>
+                </div>
+
                 <!-- KPI cards row -->
                 <div id="dashKpiRow">
                     <div class="dash-kpi-card" onclick="switchTab('guests')" style="cursor:pointer;" title="View guests">
@@ -3185,7 +3199,11 @@ var _cdInterval = null;
 function runCountdownEngine() {
     var val = document.getElementById("weddingDate").value;
     if (_cdInterval) clearInterval(_cdInterval);
-    if (!val) return;
+    if (!val) {
+        var _drs = document.getElementById('daysRemainingSpan');
+        if (_drs) _drs.innerHTML = '<span style="font-size:1.35rem;font-style:italic;color:var(--th-accent);opacity:0.55;font-weight:400;letter-spacing:0.01em;">choose your date above</span>';
+        return;
+    }
 
     function tick() { try {
         var target    = new Date(val + "T12:00:00");
@@ -3281,9 +3299,26 @@ function runCountdownEngine() {
 }
 
 // Window load safety net — fires after full page load with current date value
+// Navigate from the Next Step card
+function dashNextStepGo() {
+    var btn = document.getElementById('dashNextStepBtn');
+    var tab = btn ? (btn.dataset.tab || '') : '';
+    if (tab === '_date') {
+        document.getElementById('heroBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(function(){ var d = document.getElementById('weddingDate'); if(d) d.focus(); }, 400);
+    } else if (tab) {
+        switchTab(tab);
+    }
+}
+
 window.addEventListener('load', function() {
     var wd = document.getElementById('weddingDate');
     if (wd && wd.value) { setTimeout(runCountdownEngine, 100); }
+
+    // ── Open "A Word for Today" by default — it's the warmest feature, shouldn't be hidden ──
+    if (typeof toggleAccordionItem === 'function') {
+        toggleAccordionItem('theoStripPanel', 'theoStripChevron', 'theoStripBtn');
+    }
 
     // ── Sticky ribbon: show after hero scrolls out of view ──
     var _ribbon = document.getElementById('stickyRibbon');
@@ -3317,18 +3352,7 @@ function switchTab(targetTabId) {
     // Smooth scroll to nav so content is visible without manual scrolling
     var _nav = document.getElementById("tabNavWrap");
     if (_nav) { setTimeout(function(){ _nav.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); }
-    if(targetTabId === 'dashboard') {
-        // Ensure the Planning Details accordion is open so its checklist is visible
-        var _pp = document.getElementById('planningStripPanel');
-        var _pc = document.getElementById('planningStripChevron');
-        var _pb = document.getElementById('planningStripBtn');
-        if (_pp && _pp.style.display === 'none') {
-            _pp.style.display = '';
-            if (_pc) _pc.style.transform = 'rotate(180deg)';
-            if (_pb) _pb.style.background = '#fafbfa';
-        }
-        refreshDashboardInsights();
-    }
+    if(targetTabId === 'dashboard') { refreshDashboardInsights(); }
     if(targetTabId === 'seating')      { setTimeout(function(){ ST.render(); }, 60); }
     if(targetTabId === 'guests')       { GR.render(); }
     if(targetTabId === 'weddingparty') { WP.render(); }
@@ -5478,6 +5502,59 @@ function refreshDashboardInsights() {
     if (dkCheckSub) dkCheckSub.textContent = wlTotalChk > 0
         ? wlDone + ' of ' + wlTotalChk + ' milestones done'
         : 'Planning milestones progress';
+
+    // ── Next Step card — one clear, warm, contextual action ──
+    var _nsText = document.getElementById('dashNextStepText');
+    var _nsIcon = document.getElementById('dashNextStepIcon');
+    var _nsBtn  = document.getElementById('dashNextStepBtn');
+    if (_nsText) {
+        var _wDateVal = (document.getElementById('weddingDate') || {}).value || '';
+        var _pendingGuests = allGuests.filter(function(g){ return g.rsvp === 'pending'; }).length;
+        var _nsIc = '🌿', _nsMsg = '', _nsLabel = '', _nsTab = '';
+        if (!_wDateVal) {
+            _nsIc = '📅';
+            _nsMsg = 'Set your wedding date — it starts your live countdown and unlocks everything else.';
+            _nsLabel = 'Set Date'; _nsTab = '_date';
+        } else if (budgetTotal === 0) {
+            _nsIc = '💰';
+            _nsMsg = 'Add your total budget so you can track every dollar with confidence.';
+            _nsLabel = 'Set Budget'; _nsTab = 'budget';
+        } else if (total === 0) {
+            _nsIc = '👥';
+            _nsMsg = 'Start building your guest list — your seating chart and RSVP tracking will follow.';
+            _nsLabel = 'Add Guests'; _nsTab = 'guests';
+        } else if (_pendingGuests > 0) {
+            _nsIc = '✉️';
+            _nsMsg = _pendingGuests + ' guest' + (_pendingGuests === 1 ? '' : 's') + ' still need' + (_pendingGuests === 1 ? 's' : '') + ' to RSVP. A gentle reminder goes a long way.';
+            _nsLabel = 'View Guests'; _nsTab = 'guests';
+        } else if (wlPending > 0 && typeof WL !== 'undefined') {
+            var _nt = WL.getPending()[0];
+            _nsIc = '✅';
+            _nsMsg = 'Next on your checklist: ' + (_nt ? _nt.label : 'your next milestone') + '.';
+            _nsLabel = 'Open Checklist'; _nsTab = 'checklist';
+        } else {
+            _nsIc = '✨';
+            _nsMsg = 'You\'re right on track. Take a breath — this day is going to be beautiful.';
+            _nsLabel = ''; _nsTab = '';
+        }
+        _nsText.textContent = _nsMsg;
+        if (_nsIcon) _nsIcon.textContent = _nsIc;
+        if (_nsBtn) {
+            _nsBtn.style.display = _nsLabel ? 'block' : 'none';
+            _nsBtn.textContent   = _nsLabel + ' →';
+            _nsBtn.dataset.tab   = _nsTab;
+        }
+    }
+
+    // ── Greeting line (time-of-day + first name) ──
+    var _greetEl = document.getElementById('dashGreetingLine');
+    if (_greetEl) {
+        var _hr = new Date().getHours();
+        var _tod = _hr < 12 ? 'morning' : _hr < 17 ? 'afternoon' : 'evening';
+        var _bv = (document.getElementById('brideName') || {}).value || 'Bride';
+        var _fn = (_bv && _bv !== 'Bride') ? ', ' + _bv : '';
+        _greetEl.textContent = 'Good ' + _tod + _fn + '.';
+    }
 
     // ── Smart alerts (shown in expandable planning panel) ──
     var alerts = [];
