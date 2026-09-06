@@ -442,6 +442,13 @@
   <button onclick="exportGuestCSV()" style="margin-left:6px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">Export data</button>
 </div>
 
+<!-- Backup reminder banner (bottom edge, green/sage — non-blocking) -->
+<div id="backupReminderBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9500;background:linear-gradient(135deg,#1a3829,#234d37);color:white;padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;text-align:center;box-shadow:0 -2px 10px rgba(0,0,0,.2);">
+  💾 <span id="backupReminderMsg">It's been a while — save a local backup of your planner.</span>
+  <button onclick="exportHeirloomData();dismissBackupBanner()" style="margin-left:14px;background:white;color:#234d37;border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;font-size:12px;">Save Backup</button>
+  <button onclick="dismissBackupBanner()" style="margin-left:6px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">Later</button>
+</div>
+
 <!-- Conflict detection banner (blue, z-index below trial + session) -->
 <div id="conflictBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:19998;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);color:white;padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.22);">
   🔀 Changes detected from another device — someone may have updated the planner.
@@ -548,6 +555,7 @@
         <div>
             <div style="font-family:'Inter',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#b0bbb2;margin-bottom:6px;">Backup &amp; Restore</div>
             <div style="font-family:'Inter',sans-serif;font-size:12px;color:#58695d;margin-bottom:14px;">Save your planning data to a file, or restore from a previous backup.</div>
+            <div id="backupStatusLine" style="font-family:'Inter',sans-serif;font-size:11px;color:#6b7c72;margin-bottom:10px;"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                 <button onclick="exportGuestCSV()"
                     style="display:inline-flex;align-items:center;gap:5px;background:none;color:#58695d;border:1.5px solid #dae0db;border-radius:8px;padding:7px 14px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;"
@@ -3296,6 +3304,7 @@ function toggleSettingsPanel() {
         btn.style.borderColor   = isOpen ? '#e8eeea'   : 'var(--th-accent-border)';
         btn.style.color         = isOpen ? '#58695d'   : 'var(--th-accent-dark)';
     }
+    if (!isOpen) updateBackupStatusLine(); // refresh "last backed up" whenever panel opens
 }
 
 function toggleTheologicalEngine() {
@@ -4331,6 +4340,7 @@ async function exportHeirloomData() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
+        recordBackupTimestamp(); // update last-backup timestamp + dismiss reminder banner
         showToast('Backup saved — ' + guests.length + ' guests, ' + budget.length + ' budget items.');
         if (btn) { btn.textContent = '✓ Saved'; setTimeout(function(){ btn.textContent = 'Save to File ↓'; btn.disabled = false; }, 3000); }
     } catch(err) {
@@ -7434,7 +7444,9 @@ async function onSignIn(user) {
     updateAuthUI(user);
     await loadCloudData(user);
     updateTrialBadge();
-    startConflictMonitor(); // begin watching for concurrent edits from another device
+    startConflictMonitor();   // begin watching for concurrent edits from another device
+    updateBackupStatusLine(); // refresh "last backed up" in Settings
+    setTimeout(checkBackupReminder, 4000); // delay 4s so it doesn't fire on top of sign-in toast
     showToast(wasPending ? 'Your purchase is confirmed — welcome to Heirloom! 💍' : 'Welcome back 💍');
 }
 
@@ -8067,6 +8079,58 @@ var TRIAL_PRICE    = '$12';
 var STRIPE_LINK    = 'https://buy.stripe.com/aFadR93SZ991cQb8UZaIM0e'; // replace after Stripe setup
 var UNLOCK_KEY     = 'hl_unlocked_v1';
 var TRIAL_START_KEY= 'hl_trial_start';
+var BACKUP_KEY     = 'hl_last_backup';
+var BACKUP_REMIND_HOURS = 24; // show reminder if no backup in this many hours
+
+function dismissBackupBanner() {
+    var b = document.getElementById('backupReminderBanner');
+    if (b) b.style.display = 'none';
+}
+
+function checkBackupReminder() {
+    var lastBackup = parseInt(localStorage.getItem(BACKUP_KEY) || '0') || 0;
+    var now        = Date.now();
+    var hoursSince = lastBackup ? Math.floor((now - lastBackup) / 3600000) : null;
+    var shouldShow = !lastBackup || (now - lastBackup) > BACKUP_REMIND_HOURS * 3600000;
+    if (!shouldShow) return;
+
+    var msgEl = document.getElementById('backupReminderMsg');
+    if (msgEl) {
+        if (!lastBackup) {
+            msgEl.textContent = 'No local backup on file — save a copy of your planner data.';
+        } else if (hoursSince < 48) {
+            msgEl.textContent = 'It\'s been ' + hoursSince + ' hours — time for your daily backup.';
+        } else {
+            var days = Math.floor(hoursSince / 24);
+            msgEl.textContent = 'Last backup was ' + days + ' day' + (days !== 1 ? 's' : '') + ' ago — save a fresh copy.';
+        }
+    }
+    var banner = document.getElementById('backupReminderBanner');
+    if (banner) banner.style.display = 'block';
+}
+
+function recordBackupTimestamp() {
+    try { localStorage.setItem(BACKUP_KEY, Date.now().toString()); } catch(e) {}
+    dismissBackupBanner();
+    updateBackupStatusLine();
+}
+
+function updateBackupStatusLine() {
+    var el = document.getElementById('backupStatusLine');
+    if (!el) return;
+    var lastBackup = parseInt(localStorage.getItem(BACKUP_KEY) || '0') || 0;
+    if (!lastBackup) {
+        el.textContent = 'No local backup on file.';
+        el.style.color = '#b45309';
+    } else {
+        var hoursSince = Math.floor((Date.now() - lastBackup) / 3600000);
+        var label = hoursSince < 1 ? 'just now'
+                  : hoursSince < 48 ? hoursSince + 'h ago'
+                  : Math.floor(hoursSince / 24) + ' days ago';
+        el.textContent = 'Last backup: ' + label + ' — ' + new Date(lastBackup).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        el.style.color = hoursSince > 48 ? '#b45309' : '#6b7c72';
+    }
+}
 
 function initTrial() {
     // Already paid — nothing to do
