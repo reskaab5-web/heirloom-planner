@@ -2118,22 +2118,59 @@
 
 <!-- ══════════ AUTH MODAL (Supabase Magic Link) ══════════ -->
 <div id="authModal" style="display:none;position:fixed;inset:0;z-index:12000;background:rgba(35,40,37,0.82);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
-    <div style="background:#fcfbfa;border-radius:24px;box-shadow:0 40px 100px -20px rgba(30,40,35,0.5);max-width:400px;width:100%;padding:40px 36px;text-align:center;position:relative;">
+    <div style="background:#fcfbfa;border-radius:24px;box-shadow:0 40px 100px -20px rgba(30,40,35,0.5);max-width:420px;width:100%;padding:40px 36px;text-align:center;position:relative;">
         <button onclick="document.getElementById('authModal').style.display='none'" style="position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;color:#b0bbb2;font-size:20px;line-height:1;">×</button>
         <div style="width:40px;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);margin:0 auto 28px;"></div>
         <div style="font-size:28px;margin-bottom:14px;">💍</div>
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:600;color:#3d4740;margin-bottom:8px;">Sign In to Heirloom</div>
-        <div style="font-family:'Inter',sans-serif;font-size:13px;color:#6b7c72;margin-bottom:24px;line-height:1.6;">Enter your email and we'll send you a magic sign-in link — no password needed.</div>
-        <input id="authEmailInput" type="email" placeholder="your@email.com"
-            style="width:100%;border:1.5px solid #dae0db;border-radius:10px;padding:12px 16px;font-family:'Inter',sans-serif;font-size:14px;color:#3d4740;outline:none;box-sizing:border-box;margin-bottom:14px;"
-            onfocus="this.style.borderColor='#8ca393'" onblur="this.style.borderColor='#dae0db'"
-            onkeydown="if(event.key==='Enter')sendMagicLink()"/>
-        <button onclick="sendMagicLink()" id="magicLinkBtn"
-            style="width:100%;background:linear-gradient(135deg,#3d4740,#58695d);color:white;border:none;border-radius:10px;padding:13px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-bottom:12px;transition:opacity 0.2s;"
-            onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-            Send Magic Link
-        </button>
-        <div id="authMsg" style="font-family:'Inter',sans-serif;font-size:12px;color:#8ca393;min-height:18px;line-height:1.5;"></div>
+
+        <!-- ── STATE 1: Email entry ── -->
+        <div id="authStateForm">
+            <div style="font-family:'Inter',sans-serif;font-size:13px;color:#6b7c72;margin-bottom:20px;line-height:1.6;">Enter the email you used to sign up and we'll send a sign-in link — no password needed.</div>
+            <input id="authEmailInput" type="email" placeholder="your@email.com"
+                style="width:100%;border:1.5px solid #dae0db;border-radius:10px;padding:12px 16px;font-family:'Inter',sans-serif;font-size:14px;color:#3d4740;outline:none;box-sizing:border-box;margin-bottom:14px;"
+                onfocus="this.style.borderColor='#8ca393'" onblur="this.style.borderColor='#dae0db'"
+                onkeydown="if(event.key==='Enter')sendMagicLink()"/>
+            <button onclick="sendMagicLink()" id="magicLinkBtn"
+                style="width:100%;background:linear-gradient(135deg,#3d4740,#58695d);color:white;border:none;border-radius:10px;padding:13px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-bottom:10px;transition:opacity 0.2s;"
+                onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                Send Sign-In Link
+            </button>
+            <div id="authMsg" style="font-family:'Inter',sans-serif;font-size:12px;color:#c4848f;min-height:18px;line-height:1.5;"></div>
+        </div>
+
+        <!-- ── STATE 2: Link sent — help panel ── -->
+        <div id="authStateSent" style="display:none;">
+            <div style="background:#f0f5f1;border:1px solid #c2cbc4;border-radius:12px;padding:18px 20px;margin-bottom:18px;text-align:left;">
+                <div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#58695d;margin-bottom:10px;">✓ Link sent to <span id="authSentEmail" style="color:#3d4740;font-style:normal;"></span></div>
+                <div style="font-family:'Inter',sans-serif;font-size:13px;color:#3d4740;line-height:1.8;">
+                    1. Open your email app and look for a message from <strong>noreply@mail.app.supabase.io</strong><br>
+                    2. Click the <strong>"Sign in"</strong> button in that email<br>
+                    3. This window will update automatically
+                </div>
+            </div>
+
+            <!-- Spam guidance -->
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:18px;text-align:left;">
+                <div style="font-family:'Inter',sans-serif;font-size:12px;color:#92400e;line-height:1.75;">
+                    <strong>Don't see it?</strong> Check your <strong>Spam</strong> or <strong>Junk</strong> folder — magic links sometimes land there. The link expires in <strong>60 minutes</strong>.
+                </div>
+            </div>
+
+            <!-- Resend + wrong email -->
+            <button onclick="resendMagicLink()" id="resendBtn"
+                style="width:100%;background:linear-gradient(135deg,#3d4740,#58695d);color:white;border:none;border-radius:10px;padding:12px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-bottom:10px;transition:opacity 0.2s;"
+                onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                Resend Link
+            </button>
+            <button onclick="authBackToForm()"
+                style="width:100%;background:none;border:1.5px solid #dae0db;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#6b7c72;cursor:pointer;transition:all 0.15s;margin-bottom:4px;"
+                onmouseover="this.style.borderColor='#8ca393';this.style.color='#3d4740'" onmouseout="this.style.borderColor='#dae0db';this.style.color='#6b7c72'">
+                ← Try a Different Email Address
+            </button>
+            <div id="resendMsg" style="font-family:'Inter',sans-serif;font-size:12px;color:#8ca393;min-height:18px;line-height:1.5;margin-top:6px;"></div>
+        </div>
+
         <div style="width:40px;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);margin:20px auto 0;"></div>
     </div>
 </div>
@@ -7349,16 +7386,39 @@ async function onSignIn(user) {
 
 function showAuthModal() {
     var modal = document.getElementById('authModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        var msgEl = document.getElementById('authMsg');
-        if (msgEl) { msgEl.textContent = ''; }
-        var emailEl = document.getElementById('authEmailInput');
-        if (emailEl) { emailEl.value = ''; setTimeout(function(){ emailEl.focus(); }, 100); }
-        var btn = document.getElementById('magicLinkBtn');
-        if (btn) { btn.textContent = 'Send Magic Link'; btn.disabled = false; }
-    }
+    if (!modal) return;
+    modal.style.display = 'flex';
+    authBackToForm();   // always start fresh at the email entry state
 }
+
+function authBackToForm() {
+    var formEl  = document.getElementById('authStateForm');
+    var sentEl  = document.getElementById('authStateSent');
+    var msgEl   = document.getElementById('authMsg');
+    var emailEl = document.getElementById('authEmailInput');
+    var btn     = document.getElementById('magicLinkBtn');
+    if (formEl) formEl.style.display = 'block';
+    if (sentEl) sentEl.style.display = 'none';
+    if (msgEl)  { msgEl.textContent = ''; }
+    if (btn)    { btn.textContent = 'Send Sign-In Link'; btn.disabled = false; }
+    if (emailEl) { emailEl.value = ''; setTimeout(function(){ emailEl.focus(); }, 80); }
+}
+
+function _authShowSentState(email) {
+    var formEl    = document.getElementById('authStateForm');
+    var sentEl    = document.getElementById('authStateSent');
+    var sentEmail = document.getElementById('authSentEmail');
+    var resendBtn = document.getElementById('resendBtn');
+    var resendMsg = document.getElementById('resendMsg');
+    if (formEl)    formEl.style.display = 'none';
+    if (sentEl)    sentEl.style.display = 'block';
+    if (sentEmail) sentEmail.textContent = email;
+    if (resendBtn) { resendBtn.textContent = 'Resend Link'; resendBtn.disabled = false; }
+    if (resendMsg) resendMsg.textContent = '';
+}
+
+// Tracks the last email used so Resend can replay without re-reading the input
+var _lastMagicEmail = '';
 
 async function sendMagicLink() {
     var emailEl = document.getElementById('authEmailInput');
@@ -7379,14 +7439,39 @@ async function sendMagicLink() {
 
     if (error) {
         if (msgEl) { msgEl.textContent = error.message; msgEl.style.color = '#c4848f'; }
-        if (btn) { btn.textContent = 'Send Magic Link'; btn.disabled = false; }
+        if (btn)   { btn.textContent = 'Send Sign-In Link'; btn.disabled = false; }
         return;
     }
-    if (msgEl) {
-        msgEl.innerHTML = '✓ Check your email — we sent you a sign-in link!<br><span style="color:#b0bbb2;font-size:11px;">You can close this and click the link when it arrives.</span>';
-        msgEl.style.color = '#8ca393';
+
+    _lastMagicEmail = email;
+    _authShowSentState(email);
+}
+
+async function resendMagicLink() {
+    var resendBtn = document.getElementById('resendBtn');
+    var resendMsg = document.getElementById('resendMsg');
+    if (!_lastMagicEmail) { authBackToForm(); return; }
+
+    if (resendBtn) { resendBtn.textContent = 'Sending…'; resendBtn.disabled = true; }
+    if (resendMsg) resendMsg.textContent = '';
+
+    var { error } = await getSB().auth.signInWithOtp({
+        email: _lastMagicEmail,
+        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+    });
+
+    if (error) {
+        if (resendMsg) { resendMsg.textContent = error.message; resendMsg.style.color = '#c4848f'; }
+        if (resendBtn) { resendBtn.textContent = 'Resend Link'; resendBtn.disabled = false; }
+        return;
     }
-    if (btn) { btn.textContent = '✓ Email Sent'; }
+    if (resendBtn) { resendBtn.textContent = '✓ Resent'; resendBtn.disabled = true; }
+    if (resendMsg) { resendMsg.textContent = 'A fresh link is on its way — check spam if you still don\'t see it.'; resendMsg.style.color = '#8ca393'; }
+    // Re-enable after 30 s so she can resend again if needed
+    setTimeout(function() {
+        if (resendBtn) { resendBtn.textContent = 'Resend Link'; resendBtn.disabled = false; }
+        if (resendMsg) resendMsg.textContent = '';
+    }, 30000);
 }
 
 // ── DATA EXPORT ─────────────────────────────────────────────────────────────
