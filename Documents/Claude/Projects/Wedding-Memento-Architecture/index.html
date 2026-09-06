@@ -857,7 +857,7 @@
             <span id="heroCoupleName">Bride &amp; Groom</span>'s wedding is in
         </div>
         <div style="margin-bottom:20px;line-height:1;">
-            <span id="daysRemainingSpan" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:4.5rem;font-weight:700;font-style:normal;color:var(--th-accent-deep);letter-spacing:-0.02em;line-height:1;">---</span>
+            <span id="daysRemainingSpan" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:4.5rem;font-weight:700;font-style:normal;color:var(--th-accent-deep);letter-spacing:-0.02em;line-height:1;"><span style="font-size:1.35rem;font-style:italic;color:var(--th-accent);opacity:0.55;font-weight:400;letter-spacing:0.01em;">choose your date above</span></span>
             <span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;font-style:italic;color:var(--th-accent-dark);margin-left:8px;opacity:0.7;vertical-align:middle;"> days away</span>
         </div>
         <div id="cdGrid" style="display:flex;align-items:flex-end;justify-content:center;gap:10px;">
@@ -3313,7 +3313,7 @@ function dashNextStepGo() {
 
 window.addEventListener('load', function() {
     var wd = document.getElementById('weddingDate');
-    if (wd && wd.value) { setTimeout(runCountdownEngine, 100); }
+    setTimeout(runCountdownEngine, 100);
 
     // ── Open "A Word for Today" by default — it's the warmest feature, shouldn't be hidden ──
     if (typeof toggleAccordionItem === 'function') {
