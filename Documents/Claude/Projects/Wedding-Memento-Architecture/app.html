@@ -413,6 +413,9 @@
             }
             #stToolbarBtns::-webkit-scrollbar { display: none; }
 
+            /* Dashboard KPI grid: 1-column on smallest screens */
+            #dashKpiRow { grid-template-columns: 1fr !important; }
+
             /* Right-edge fade hint — stays fixed, shows more content exists */
             #tabNavWrap::after {
                 content: '';
@@ -424,6 +427,116 @@
                 z-index: 11;
             }
         }
+
+        /* ══ STICKY COUNTDOWN RIBBON ══ */
+        #stickyRibbon {
+            position: sticky;
+            top: 0;
+            z-index: 9000;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--th-accent-border);
+            padding: 7px 20px;
+            text-align: center;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+            transition: opacity 0.35s, transform 0.35s;
+            opacity: 0;
+            transform: translateY(-100%);
+            pointer-events: none;
+        }
+        #stickyRibbon.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* ══ DASHBOARD PANEL ══ */
+        #dashFocusPanel { animation: fadeSlideIn 0.3s ease; }
+        #dashKpiRow { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+        .dash-kpi-card {
+            background: white;
+            border: 1px solid var(--th-accent-border);
+            border-radius: 14px;
+            padding: 20px 20px 16px;
+            text-align: center;
+            box-shadow: 0 2px 12px -2px rgba(140,150,142,0.08);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .dash-kpi-card:hover { box-shadow: 0 6px 24px -4px rgba(140,150,142,0.14); transform: translateY(-1px); }
+        .dash-kpi-num {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 2.4rem;
+            font-weight: 600;
+            color: #3d4740;
+            line-height: 1;
+        }
+        .dash-kpi-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--th-accent);
+            margin-top: 7px;
+        }
+        .dash-kpi-sub {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            color: #b0bbb2;
+            margin-top: 4px;
+        }
+        .dash-alert-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid #f5f7f5;
+        }
+        .dash-alert-row:last-child { border-bottom: none; }
+
+        /* ══ TAB ICON LABELS ══ */
+        .tab-icon { margin-right: 5px; font-style: normal; font-size: 13px; }
+
+        /* ══ EMPTY STATES ══ */
+        .hl-empty {
+            text-align: center;
+            padding: 52px 24px 48px;
+        }
+        .hl-empty-icon { font-size: 2.8rem; margin-bottom: 14px; opacity: 0.65; display: block; }
+        .hl-empty-title {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1.4rem;
+            font-style: italic;
+            color: #8ca393;
+            margin-bottom: 8px;
+        }
+        .hl-empty-body {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #b0bbb2;
+            line-height: 1.7;
+            max-width: 280px;
+            margin: 0 auto 22px;
+        }
+        .hl-empty-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--th-accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 22px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+        .hl-empty-btn:hover { opacity: 0.85; transform: translateY(-1px); }
     </style>
 </head>
 <body class="theme-sage min-h-screen p-6 flex flex-col justify-between">
@@ -502,6 +615,18 @@
         </button>
     </div>
 </header>
+
+<!-- ══════════ STICKY COUNTDOWN RIBBON ══════════ -->
+<div id="stickyRibbon">
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+        <span id="ribbonCoupleName" style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1rem;color:var(--th-accent-dark);">Bride &amp; Groom</span>
+        <span style="display:flex;align-items:baseline;gap:5px;">
+            <span id="ribbonDays" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:700;color:var(--th-accent-deep);line-height:1;"></span>
+            <span style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--th-accent);">days away</span>
+        </span>
+        <span id="ribbonDate" style="font-family:'Inter',sans-serif;font-size:11px;color:#b0bbb2;letter-spacing:0.06em;"></span>
+    </div>
+</div>
 
 <!-- ══════════ SETTINGS PANEL ══════════ -->
 <div id="settingsPanel" style="display:none;background:white;border:1px solid var(--th-accent-border);border-radius:16px;margin-bottom:20px;padding:28px 32px;animation:fadeSlideIn 0.2s ease;">
@@ -798,59 +923,59 @@
     <button onclick="switchTab('dashboard')" id="tab-dashboard"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;"
         class="active-tab">
-        Dashboard
+        <i class="tab-icon">🏠</i>Dashboard
     </button>
     <button onclick="switchTab('budget')" id="tab-budget"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Budget
+        <i class="tab-icon">💰</i>Budget
     </button>
     <button onclick="switchTab('guests')" id="tab-guests"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Guests
+        <i class="tab-icon">👥</i>Guests
     </button>
     <button onclick="switchTab('seating')" id="tab-seating"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Seating
+        <i class="tab-icon">🪑</i>Seating
     </button>
     <button onclick="switchTab('logistics')" id="tab-logistics"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Gifts
+        <i class="tab-icon">🎁</i>Gifts
     </button>
     <button onclick="switchTab('weddingparty')" id="tab-weddingparty"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Wedding Party
+        <i class="tab-icon">💍</i>Wedding Party
     </button>
     <button onclick="switchTab('schedule')" id="tab-schedule"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Schedule
+        <i class="tab-icon">📅</i>Schedule
     </button>
     <button onclick="switchTab('vendors')" id="tab-vendors"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Vendors
+        <i class="tab-icon">🏛️</i>Vendors
     </button>
     <button onclick="switchTab('expenses')" id="tab-expenses"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Expenses
+        <i class="tab-icon">📊</i>Expenses
     </button>
     <button onclick="switchTab('checklist')" id="tab-checklist"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Checklist
+        <i class="tab-icon">✅</i>Checklist
     </button>
     <button onclick="switchTab('music')" id="tab-music"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Music
+        <i class="tab-icon">🎵</i>Music
     </button>
     <button onclick="switchTab('photos')" id="tab-photos"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Photo Shots
+        <i class="tab-icon">📷</i>Photos
     </button>
     <button onclick="switchTab('packing')" id="tab-packing"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Packing
+        <i class="tab-icon">🧳</i>Packing
     </button>
     <button onclick="switchTab('payments')" id="tab-payments"
         style="padding:7px 16px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.11em;text-transform:uppercase;color:#6b7c72;background:transparent;cursor:pointer;transition:all 0.18s;margin-bottom:-1px;white-space:nowrap;">
-        Payments
+        <i class="tab-icon">💳</i>Payments
     </button>
 </nav>
 </div><!-- /tabNavWrap -->
@@ -1025,7 +1150,39 @@
                 <span id="pillGuestsSub"></span>
             </div>
 
-            <!-- dashboard has no visual body — content lives in the accordion strip -->
+            <!-- ── Dashboard focus panel (always visible) ── -->
+            <div id="dashFocusPanel">
+                <!-- KPI cards row -->
+                <div id="dashKpiRow">
+                    <div class="dash-kpi-card" onclick="switchTab('guests')" style="cursor:pointer;" title="View guests">
+                        <div class="dash-kpi-num" id="dkpiGuests">—</div>
+                        <div class="dash-kpi-label">Guests Confirmed</div>
+                        <div class="dash-kpi-sub" id="dkpiGuestsSub">Add guests to get started</div>
+                    </div>
+                    <div class="dash-kpi-card" onclick="switchTab('budget')" style="cursor:pointer;" title="View budget">
+                        <div class="dash-kpi-num" id="dkpiBudget">—</div>
+                        <div class="dash-kpi-label">Budget Remaining</div>
+                        <div class="dash-kpi-sub" id="dkpiBudgetSub">Set a budget to track spending</div>
+                    </div>
+                    <div class="dash-kpi-card" onclick="switchTab('checklist')" style="cursor:pointer;" title="View checklist">
+                        <div class="dash-kpi-num" id="dkpiChecklist">—</div>
+                        <div class="dash-kpi-label">Tasks Complete</div>
+                        <div class="dash-kpi-sub" id="dkpiChecklistSub">Planning milestones progress</div>
+                    </div>
+                </div>
+
+                <!-- Focus alerts card -->
+                <div style="background:white;border:1px solid var(--th-accent-border);border-radius:14px;padding:24px 28px;box-shadow:0 2px 12px -2px rgba(140,150,142,0.08);">
+                    <div style="font-family:'Inter',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#b0bbb2;margin-bottom:16px;">What Needs Your Attention</div>
+                    <div id="dashFocusAlerts">
+                        <div class="hl-empty">
+                            <span class="hl-empty-icon">🌿</span>
+                            <div class="hl-empty-title">Your planning journey begins here.</div>
+                            <div class="hl-empty-body">Add your wedding date, set a budget, and start inviting guests — then check back here for smart, personalised guidance.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </div>
 
@@ -1246,9 +1403,10 @@
                         </thead>
                         <tbody id="grTableBody"></tbody>
                     </table>
-                    <div id="grEmptyState" style="text-align:center;padding:40px 20px;display:none;">
-                        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;font-style:italic;color:#b0bbb2;margin-bottom:8px;">No guests yet</div>
-                        <div style="font-family:'Inter',sans-serif;font-size:13px;color:#c2cbc4;">Add guests above or import a CSV to begin building your registry.</div>
+                    <div id="grEmptyState" class="hl-empty" style="display:none;">
+                        <span class="hl-empty-icon">👥</span>
+                        <div class="hl-empty-title">Your guest list is empty</div>
+                        <div class="hl-empty-body">Start adding the people you love — family, friends, and everyone who makes this day complete. You can also import from a spreadsheet.</div>
                     </div>
                 </div>
             </div>
@@ -3048,6 +3206,13 @@ function runCountdownEngine() {
                 var _wD0 = new Date(val + "T12:00:00");
                 _pDt.textContent = _wD0.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
             }
+            var _rDays0 = document.getElementById('ribbonDays');
+            var _rDate0 = document.getElementById('ribbonDate');
+            if (_rDays0) _rDays0.textContent = '0';
+            if (_rDate0) {
+                var _wD0b = new Date(val + "T12:00:00");
+                _rDate0.textContent = _wD0b.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+            }
             clearInterval(_cdInterval);
             return;
         }
@@ -3083,6 +3248,15 @@ function runCountdownEngine() {
         }
         document.getElementById("daysRemainingSpan").innerText = totalDays;
 
+        // ── Sticky ribbon ──
+        var _rDays = document.getElementById('ribbonDays');
+        var _rDate = document.getElementById('ribbonDate');
+        if (_rDays) _rDays.textContent = totalDays.toLocaleString();
+        if (_rDate) {
+            var _rWDate = new Date(val + "T12:00:00");
+            _rDate.textContent = _rWDate.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+        }
+
         // ── Dashboard day pill ──
         var _pDays = document.getElementById('pillDays');
         var _pDate = document.getElementById('pillDate');
@@ -3110,6 +3284,22 @@ function runCountdownEngine() {
 window.addEventListener('load', function() {
     var wd = document.getElementById('weddingDate');
     if (wd && wd.value) { setTimeout(runCountdownEngine, 100); }
+
+    // ── Sticky ribbon: show after hero scrolls out of view ──
+    var _ribbon = document.getElementById('stickyRibbon');
+    var _hero   = document.getElementById('heroBanner');
+    if (_ribbon && _hero) {
+        function _updateRibbon() {
+            var heroBottom = _hero.getBoundingClientRect().bottom;
+            if (heroBottom < 0) {
+                _ribbon.classList.add('visible');
+            } else {
+                _ribbon.classList.remove('visible');
+            }
+        }
+        window.addEventListener('scroll', _updateRibbon, { passive: true });
+        _updateRibbon();
+    }
 });
 
 // ─────────────────────────────────────────
@@ -3127,6 +3317,18 @@ function switchTab(targetTabId) {
     // Smooth scroll to nav so content is visible without manual scrolling
     var _nav = document.getElementById("tabNavWrap");
     if (_nav) { setTimeout(function(){ _nav.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); }
+    if(targetTabId === 'dashboard') {
+        // Ensure the Planning Details accordion is open so its checklist is visible
+        var _pp = document.getElementById('planningStripPanel');
+        var _pc = document.getElementById('planningStripChevron');
+        var _pb = document.getElementById('planningStripBtn');
+        if (_pp && _pp.style.display === 'none') {
+            _pp.style.display = '';
+            if (_pc) _pc.style.transform = 'rotate(180deg)';
+            if (_pb) _pb.style.background = '#fafbfa';
+        }
+        refreshDashboardInsights();
+    }
     if(targetTabId === 'seating')      { setTimeout(function(){ ST.render(); }, 60); }
     if(targetTabId === 'guests')       { GR.render(); }
     if(targetTabId === 'weddingparty') { WP.render(); }
@@ -3151,6 +3353,10 @@ function syncCoupleNames() {
     // ── Hero countdown line name (never touches daysRemainingSpan) ──
     var heroName = document.getElementById("heroCoupleName");
     if (heroName) heroName.textContent = coupleLabel;
+
+    // ── Sticky ribbon couple name ──
+    var ribbonName = document.getElementById("ribbonCoupleName");
+    if (ribbonName) ribbonName.textContent = coupleLabel;
 
     // ── Welcome modal couple names ──
     var welcomeNames = document.getElementById("welcomeCoupleNames");
@@ -5250,6 +5456,29 @@ function refreshDashboardInsights() {
             : '<span style="font-style:italic;color:#c2cbc4;">Add your guests, budget, and wedding date to get started.</span>';
     }
 
+    // ── Populate new always-visible dashboard KPI cards ──
+    var dkGuests    = document.getElementById('dkpiGuests');
+    var dkGuestsSub = document.getElementById('dkpiGuestsSub');
+    var dkBudget    = document.getElementById('dkpiBudget');
+    var dkBudgetSub = document.getElementById('dkpiBudgetSub');
+    var dkChecklist = document.getElementById('dkpiChecklist');
+    var dkCheckSub  = document.getElementById('dkpiChecklistSub');
+    if (dkGuests) dkGuests.textContent = total > 0 ? String(confirmed) : '—';
+    if (dkGuestsSub) dkGuestsSub.textContent = total > 0 ? confirmed + ' of ' + total + ' invited' : 'Add guests to get started';
+    if (dkBudget) {
+        try {
+            var rawBudgetText = (document.getElementById('kpiBudget') || {textContent:'0'}).textContent;
+            var budgetTotalVal = parseInt(rawBudgetText.replace(/[^0-9]/g, '')) || 0;
+            dkBudget.textContent = budgetTotalVal > 0 ? budgetText : '—';
+            if (dkBudgetSub) dkBudgetSub.textContent = budgetTotalVal > 0 ? budgetSub : 'Set a budget to track spending';
+        } catch(e) {}
+    }
+    var wlTotalChk = wlPending + wlDone;
+    if (dkChecklist) dkChecklist.textContent = wlTotalChk > 0 ? String(wlDone) : '—';
+    if (dkCheckSub) dkCheckSub.textContent = wlTotalChk > 0
+        ? wlDone + ' of ' + wlTotalChk + ' milestones done'
+        : 'Planning milestones progress';
+
     // ── Smart alerts (shown in expandable planning panel) ──
     var alerts = [];
 
@@ -5291,15 +5520,33 @@ function refreshDashboardInsights() {
         return;
     }
 
-    alertEl.innerHTML = alerts.slice(0, 5).map(function(a) {
-        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid #f8f9f8;">' +
-            '<span style="font-size:16px;line-height:1.2;flex-shrink:0;">' + a.icon + '</span>' +
+    var alertRowHTML = alerts.slice(0, 5).map(function(a) {
+        return '<div class="dash-alert-row">' +
+            '<span style="font-size:18px;line-height:1.2;flex-shrink:0;margin-top:1px;">' + a.icon + '</span>' +
             '<div style="flex:1;">' +
-                '<div style="font-family:\'Inter\',sans-serif;font-size:13px;color:#3d4740;line-height:1.6;">' + a.text + '</div>' +
-                (a.action ? '<button onclick="switchTab(\''+a.action+'\')" style="margin-top:6px;background:none;border:none;font-family:\'Inter\',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;color:#8ca393;cursor:pointer;padding:0;text-transform:uppercase;" onmouseover="this.style.color=\'#58695d\'" onmouseout="this.style.color=\'#8ca393\'">'+a.label+' →</button>' : '') +
+                '<div style="font-family:\'Inter\',sans-serif;font-size:13px;color:#3d4740;line-height:1.65;">' + a.text + '</div>' +
+                (a.action ? '<button onclick="switchTab(\''+a.action+'\')" style="margin-top:6px;background:none;border:none;font-family:\'Inter\',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;color:var(--th-accent);cursor:pointer;padding:0;text-transform:uppercase;" onmouseover="this.style.color=\'#58695d\'" onmouseout="this.style.color=\'var(--th-accent)\'">'+a.label+' →</button>' : '') +
             '</div>' +
         '</div>';
     }).join('');
+
+    // Legacy accordion panel
+    alertEl.innerHTML = alertRowHTML;
+
+    // New always-visible focus panel
+    var focusEl = document.getElementById('dashFocusAlerts');
+    if (focusEl) {
+        if (alerts.length === 0) {
+            focusEl.innerHTML =
+                '<div class="hl-empty">' +
+                '<span class="hl-empty-icon">🌿</span>' +
+                '<div class="hl-empty-title">Everything looks wonderful.</div>' +
+                '<div class="hl-empty-body">You\'re right on track — nothing urgent to address. Enjoy this beautiful season of planning.</div>' +
+                '</div>';
+        } else {
+            focusEl.innerHTML = alertRowHTML;
+        }
+    }
 }
 
 // ─────────────────────────────────────────
